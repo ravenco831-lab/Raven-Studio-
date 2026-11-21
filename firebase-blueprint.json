@@ -1,0 +1,192 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated creator profile for Raven AI Music Studio",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID" },
+        "displayName": { "type": "string", "description": "Creator display name" },
+        "email": { "type": "string", "description": "Creator email address" },
+        "photoUrl": { "type": "string", "description": "Optional profile photo URL" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update" }
+      },
+      "required": ["userId", "displayName", "email", "createdAt", "updatedAt"]
+    },
+    "SongRecord": {
+      "title": "SongRecord",
+      "description": "AI-generated or studio-configured song track",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "prompt": { "type": "string" },
+        "lyrics": { "type": "string" },
+        "genre": { "type": "string" },
+        "mood": { "type": "string" },
+        "bpm": { "type": "integer" },
+        "vocalType": { "type": "string", "enum": ["MALE", "FEMALE", "DUET", "INSTRUMENTAL"] },
+        "mode": { "type": "string", "enum": ["TEXT_TO_SONG", "LYRICS_TO_SONG", "INSTRUMENTAL"] },
+        "status": { "type": "string", "enum": ["DRAFT", "QUEUED", "PROCESSING", "READY", "SETUP_REQUIRED", "FAILED"] },
+        "aiGenerated": { "type": "boolean" },
+        "durationMs": { "type": "integer" },
+        "versionNumber": { "type": "integer" },
+        "audioUrl": { "type": "string" },
+        "wavUrl": { "type": "string" },
+        "storagePath": { "type": "string" },
+        "providerName": { "type": "string" },
+        "estimatedCostUsd": { "type": "number" },
+        "instruments": { "type": "array" },
+        "vocalStyle": { "type": "string" },
+        "errorMessage": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "prompt", "lyrics", "genre", "mood", "bpm", "vocalType", "mode", "status", "aiGenerated", "durationMs", "versionNumber", "createdAt", "updatedAt"]
+    },
+    "LyricSheet": {
+      "title": "LyricSheet",
+      "description": "Song lyrics and duet arrangement written or refined with Gemini AI",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "genre": { "type": "string" },
+        "duetMode": { "type": "boolean" },
+        "content": { "type": "string" },
+        "productionPrompt": { "type": "string" },
+        "singer1Name": { "type": "string" },
+        "singer2Name": { "type": "string" },
+        "aiGenerated": { "type": "boolean" },
+        "theme": { "type": "string" },
+        "parts": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "genre", "duetMode", "content", "productionPrompt", "singer1Name", "singer2Name", "aiGenerated", "createdAt", "updatedAt"]
+    },
+    "MediaAsset": {
+      "title": "MediaAsset",
+      "description": "Uploaded or generated image, video, or audio asset with audio editing metadata",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "mediaType": { "type": "string", "enum": ["IMAGE", "VIDEO", "AUDIO"] },
+        "title": { "type": "string" },
+        "mimeType": { "type": "string" },
+        "durationMs": { "type": "integer" },
+        "trimStartMs": { "type": "integer" },
+        "trimEndMs": { "type": "integer" },
+        "splitPointMs": { "type": "integer" },
+        "volume": { "type": "number" },
+        "fadeInMs": { "type": "integer" },
+        "fadeOutMs": { "type": "integer" },
+        "syncOffsetMs": { "type": "integer" },
+        "faceDetected": { "type": "boolean" },
+        "faceCount": { "type": "integer" },
+        "aiGenerated": { "type": "boolean" },
+        "localUri": { "type": "string" },
+        "remoteUrl": { "type": "string" },
+        "storagePath": { "type": "string" },
+        "waveformSamples": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "mediaType", "title", "mimeType", "durationMs", "trimStartMs", "trimEndMs", "splitPointMs", "volume", "fadeInMs", "fadeOutMs", "syncOffsetMs", "faceDetected", "faceCount", "aiGenerated", "createdAt", "updatedAt"]
+    },
+    "StudioProject": {
+      "title": "StudioProject",
+      "description": "Music video, Photo-to-Singing, Image-to-Video, or Raven & Breeze Duet Mode project",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "projectType": { "type": "string", "enum": ["DUET_RAVEN_BREEZE", "PHOTO_SING", "IMAGE_TO_VIDEO", "MUSIC_VIDEO_TIMELINE"] },
+        "title": { "type": "string" },
+        "status": { "type": "string", "enum": ["DRAFT", "QUEUED", "PROCESSING", "READY", "SETUP_REQUIRED", "FAILED"] },
+        "aspectRatio": { "type": "string", "enum": ["9:16", "16:9", "1:1"] },
+        "resolution": { "type": "string", "enum": ["720p", "1080p"] },
+        "watermarkEnabled": { "type": "boolean" },
+        "aiGenerated": { "type": "boolean" },
+        "consentConfirmed": { "type": "boolean" },
+        "singer1Name": { "type": "string" },
+        "singer1VocalRole": { "type": "string" },
+        "singer1PortraitUri": { "type": "string" },
+        "singer1FaceDetected": { "type": "boolean" },
+        "singer2Name": { "type": "string" },
+        "singer2VocalRole": { "type": "string" },
+        "singer2PortraitUri": { "type": "string" },
+        "singer2FaceDetected": { "type": "boolean" },
+        "selectedSongTitle": { "type": "string" },
+        "selectedAudioUri": { "type": "string" },
+        "audioDurationMs": { "type": "integer" },
+        "performanceStyle": { "type": "string" },
+        "performanceIntensity": { "type": "number" },
+        "useVocalSeparation": { "type": "boolean" },
+        "lipSyncOffsetMs": { "type": "integer" },
+        "cameraMovement": { "type": "string" },
+        "animationStyle": { "type": "string" },
+        "animationPrompt": { "type": "string" },
+        "textOverlay": { "type": "string" },
+        "lyricsOverlayEnabled": { "type": "boolean" },
+        "albumArtUri": { "type": "string" },
+        "transitionStyle": { "type": "string" },
+        "outputVideoUrl": { "type": "string" },
+        "errorMessage": { "type": "string" },
+        "duetLines": { "type": "array" },
+        "timelineClips": { "type": "array" },
+        "waveformSamples": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "projectType", "title", "status", "aspectRatio", "resolution", "watermarkEnabled", "aiGenerated", "consentConfirmed", "createdAt", "updatedAt"]
+    },
+    "GenerationJob": {
+      "title": "GenerationJob",
+      "description": "Asynchronous media generation job tracking progress, cost, and errors",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "jobType": { "type": "string", "enum": ["MUSIC_GEN", "PHOTO_LIPSYNC", "IMAGE_TO_VIDEO", "DUET_VIDEO", "AUDIO_VIDEO_EXPORT"] },
+        "title": { "type": "string" },
+        "providerName": { "type": "string" },
+        "status": { "type": "string", "enum": ["QUEUED", "PROCESSING", "COMPLETED", "SETUP_REQUIRED", "FAILED"] },
+        "progressPercent": { "type": "integer" },
+        "estimatedCostUsd": { "type": "number" },
+        "externalJobId": { "type": "string" },
+        "projectId": { "type": "string" },
+        "resultUrl": { "type": "string" },
+        "errorMessage": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "jobType", "title", "providerName", "status", "progressPercent", "estimatedCostUsd", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user profile metadata"
+    },
+    "/users/{userId}/songs/{songId}": {
+      "schema": { "$ref": "#/entities/SongRecord" },
+      "description": "User's generated and saved songs"
+    },
+    "/users/{userId}/lyrics/{lyricId}": {
+      "schema": { "$ref": "#/entities/LyricSheet" },
+      "description": "User's AI-assisted lyric sheets and duet arrangements"
+    },
+    "/users/{userId}/mediaAssets/{assetId}": {
+      "schema": { "$ref": "#/entities/MediaAsset" },
+      "description": "User's uploaded and edited images, audio clips, and videos"
+    },
+    "/users/{userId}/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/StudioProject" },
+      "description": "User's saved studio, video editor, and Raven & Breeze Duet Mode projects"
+    },
+    "/users/{userId}/jobs/{jobId}": {
+      "schema": { "$ref": "#/entities/GenerationJob" },
+      "description": "Background AI media generation and FFmpeg export jobs"
+    }
+  }
+}

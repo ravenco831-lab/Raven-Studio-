@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: raven-ai-music-studio-backend
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: STUDIO_BACKEND_API_KEY
+        generateValue: true
+      - key: HF_API_TOKEN
+        sync: false
+      - key: HF_MUSIC_MODEL
+        value: facebook/musicgen-small
+      - key: REPLICATE_API_TOKEN
+        sync: false
+      - key: REPLICATE_MUSIC_MODEL
+        value: meta/musicgen
+      - key: REPLICATE_LIPSYNC_MODEL
+        value: cjwbw/sadtalker
+      - key: REPLICATE_I2V_MODEL
+        value: stability-ai/stable-video-diffusion

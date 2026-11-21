@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Raven AI Music Studio</string>
+    <string name="app_tagline">Write It. Sing It. Bring It to Life.</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_create">Create</string>
+    <string name="nav_studio">Studio</string>
+    <string name="nav_library">Library</string>
+    <string name="nav_profile">Settings</string>
+    <string name="ai_generated_label">AI Generated Media</string>
+    <string name="watermark_brand">Raven &amp; Co.</string>
+</resources>

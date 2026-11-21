@@ -1,0 +1,6 @@
+{
+  "name": "Raven AI Music Studio",
+  "description": "Write It. Sing It. Bring It to Life. AI music generation, Gemini lyrics studio, photo-to-singing video, image-to-video, audio editing, and Raven & Breeze Duet Mode.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

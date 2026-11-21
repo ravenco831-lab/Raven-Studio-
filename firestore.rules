@@ -1,0 +1,289 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Hardened Primitives ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    // --- Entity Validation Helpers ---
+    function isValidUserProfile(data, userId) {
+      return data.userId == userId &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+             data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidSongRecord(data, userId) {
+      return data.userId == userId &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.prompt is string && data.prompt.size() <= 2000 &&
+             data.lyrics is string && data.lyrics.size() <= 10000 &&
+             data.genre is string && data.genre.size() >= 1 && data.genre.size() <= 60 &&
+             data.mood is string && data.mood.size() >= 1 && data.mood.size() <= 60 &&
+             data.bpm is int && data.bpm >= 40 && data.bpm <= 240 &&
+             data.vocalType in ['MALE', 'FEMALE', 'DUET', 'INSTRUMENTAL'] &&
+             data.mode in ['TEXT_TO_SONG', 'LYRICS_TO_SONG', 'INSTRUMENTAL'] &&
+             data.status in ['DRAFT', 'QUEUED', 'PROCESSING', 'READY', 'SETUP_REQUIRED', 'FAILED'] &&
+             data.aiGenerated is bool &&
+             data.durationMs is int && data.durationMs >= 0 && data.durationMs <= 3600000 &&
+             data.versionNumber is int && data.versionNumber >= 1 && data.versionNumber <= 50 &&
+             (!('audioUrl' in data) || (data.audioUrl is string && data.audioUrl.size() <= 1000)) &&
+             (!('wavUrl' in data) || (data.wavUrl is string && data.wavUrl.size() <= 1000)) &&
+             (!('storagePath' in data) || (data.storagePath is string && data.storagePath.size() <= 500)) &&
+             (!('providerName' in data) || (data.providerName is string && data.providerName.size() <= 100)) &&
+             (!('estimatedCostUsd' in data) || (data.estimatedCostUsd is number && data.estimatedCostUsd >= 0)) &&
+             (!('instruments' in data) || (data.instruments is list && data.instruments.size() <= 12 && (data.instruments.size() == 0 || data.instruments[0] is string))) &&
+             (!('vocalStyle' in data) || (data.vocalStyle is string && data.vocalStyle.size() <= 120)) &&
+             (!('errorMessage' in data) || (data.errorMessage is string && data.errorMessage.size() <= 1000)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidLyricSheet(data, userId) {
+      return data.userId == userId &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.genre is string && data.genre.size() >= 1 && data.genre.size() <= 60 &&
+             data.duetMode is bool &&
+             data.content is string && data.content.size() >= 1 && data.content.size() <= 15000 &&
+             data.productionPrompt is string && data.productionPrompt.size() <= 2000 &&
+             data.singer1Name is string && data.singer1Name.size() >= 1 && data.singer1Name.size() <= 60 &&
+             data.singer2Name is string && data.singer2Name.size() >= 1 && data.singer2Name.size() <= 60 &&
+             data.aiGenerated is bool &&
+             (!('theme' in data) || (data.theme is string && data.theme.size() <= 500)) &&
+             (!('parts' in data) || (data.parts is list && data.parts.size() <= 120)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidMediaAsset(data, userId) {
+      return data.userId == userId &&
+             data.mediaType in ['IMAGE', 'VIDEO', 'AUDIO'] &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.mimeType is string && data.mimeType.size() >= 1 && data.mimeType.size() <= 80 &&
+             data.durationMs is int && data.durationMs >= 0 && data.durationMs <= 3600000 &&
+             data.trimStartMs is int && data.trimStartMs >= 0 && data.trimStartMs <= 3600000 &&
+             data.trimEndMs is int && data.trimEndMs >= 0 && data.trimEndMs <= 3600000 &&
+             data.splitPointMs is int && data.splitPointMs >= 0 && data.splitPointMs <= 3600000 &&
+             data.volume is number && data.volume >= 0 && data.volume <= 2.0 &&
+             data.fadeInMs is int && data.fadeInMs >= 0 && data.fadeInMs <= 30000 &&
+             data.fadeOutMs is int && data.fadeOutMs >= 0 && data.fadeOutMs <= 30000 &&
+             data.syncOffsetMs is int && data.syncOffsetMs >= -30000 && data.syncOffsetMs <= 30000 &&
+             data.faceDetected is bool &&
+             data.faceCount is int && data.faceCount >= 0 && data.faceCount <= 50 &&
+             data.aiGenerated is bool &&
+             (!('localUri' in data) || (data.localUri is string && data.localUri.size() <= 1000)) &&
+             (!('remoteUrl' in data) || (data.remoteUrl is string && data.remoteUrl.size() <= 1000)) &&
+             (!('storagePath' in data) || (data.storagePath is string && data.storagePath.size() <= 500)) &&
+             (!('waveformSamples' in data) || (data.waveformSamples is list && data.waveformSamples.size() <= 128 && (data.waveformSamples.size() == 0 || data.waveformSamples[0] is int))) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidStudioProject(data, userId) {
+      return data.userId == userId &&
+             data.projectType in ['DUET_RAVEN_BREEZE', 'PHOTO_SING', 'IMAGE_TO_VIDEO', 'MUSIC_VIDEO_TIMELINE'] &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.status in ['DRAFT', 'QUEUED', 'PROCESSING', 'READY', 'SETUP_REQUIRED', 'FAILED'] &&
+             data.aspectRatio in ['9:16', '16:9', '1:1'] &&
+             data.resolution in ['720p', '1080p'] &&
+             data.watermarkEnabled is bool &&
+             data.aiGenerated is bool &&
+             data.consentConfirmed is bool &&
+             (!('singer1Name' in data) || (data.singer1Name is string && data.singer1Name.size() <= 60)) &&
+             (!('singer1VocalRole' in data) || (data.singer1VocalRole is string && data.singer1VocalRole.size() <= 40)) &&
+             (!('singer1PortraitUri' in data) || (data.singer1PortraitUri is string && data.singer1PortraitUri.size() <= 1000)) &&
+             (!('singer1FaceDetected' in data) || data.singer1FaceDetected is bool) &&
+             (!('singer2Name' in data) || (data.singer2Name is string && data.singer2Name.size() <= 60)) &&
+             (!('singer2VocalRole' in data) || (data.singer2VocalRole is string && data.singer2VocalRole.size() <= 40)) &&
+             (!('singer2PortraitUri' in data) || (data.singer2PortraitUri is string && data.singer2PortraitUri.size() <= 1000)) &&
+             (!('singer2FaceDetected' in data) || data.singer2FaceDetected is bool) &&
+             (!('selectedSongTitle' in data) || (data.selectedSongTitle is string && data.selectedSongTitle.size() <= 120)) &&
+             (!('selectedAudioUri' in data) || (data.selectedAudioUri is string && data.selectedAudioUri.size() <= 1000)) &&
+             (!('audioDurationMs' in data) || (data.audioDurationMs is int && data.audioDurationMs >= 0 && data.audioDurationMs <= 3600000)) &&
+             (!('performanceStyle' in data) || (data.performanceStyle is string && data.performanceStyle.size() <= 60)) &&
+             (!('performanceIntensity' in data) || (data.performanceIntensity is number && data.performanceIntensity >= 0 && data.performanceIntensity <= 1.0)) &&
+             (!('useVocalSeparation' in data) || data.useVocalSeparation is bool) &&
+             (!('lipSyncOffsetMs' in data) || (data.lipSyncOffsetMs is int && data.lipSyncOffsetMs >= -10000 && data.lipSyncOffsetMs <= 10000)) &&
+             (!('cameraMovement' in data) || (data.cameraMovement is string && data.cameraMovement.size() <= 60)) &&
+             (!('animationStyle' in data) || (data.animationStyle is string && data.animationStyle.size() <= 60)) &&
+             (!('animationPrompt' in data) || (data.animationPrompt is string && data.animationPrompt.size() <= 1000)) &&
+             (!('textOverlay' in data) || (data.textOverlay is string && data.textOverlay.size() <= 200)) &&
+             (!('lyricsOverlayEnabled' in data) || data.lyricsOverlayEnabled is bool) &&
+             (!('albumArtUri' in data) || (data.albumArtUri is string && data.albumArtUri.size() <= 1000)) &&
+             (!('transitionStyle' in data) || (data.transitionStyle is string && data.transitionStyle.size() <= 40)) &&
+             (!('outputVideoUrl' in data) || (data.outputVideoUrl is string && data.outputVideoUrl.size() <= 1000)) &&
+             (!('errorMessage' in data) || (data.errorMessage is string && data.errorMessage.size() <= 1000)) &&
+             (!('duetLines' in data) || (data.duetLines is list && data.duetLines.size() <= 120)) &&
+             (!('timelineClips' in data) || (data.timelineClips is list && data.timelineClips.size() <= 50)) &&
+             (!('waveformSamples' in data) || (data.waveformSamples is list && data.waveformSamples.size() <= 128 && (data.waveformSamples.size() == 0 || data.waveformSamples[0] is int))) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidGenerationJob(data, userId) {
+      return data.userId == userId &&
+             data.jobType in ['MUSIC_GEN', 'PHOTO_LIPSYNC', 'IMAGE_TO_VIDEO', 'DUET_VIDEO', 'AUDIO_VIDEO_EXPORT'] &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.providerName is string && data.providerName.size() >= 1 && data.providerName.size() <= 80 &&
+             data.status in ['QUEUED', 'PROCESSING', 'COMPLETED', 'SETUP_REQUIRED', 'FAILED'] &&
+             data.progressPercent is int && data.progressPercent >= 0 && data.progressPercent <= 100 &&
+             data.estimatedCostUsd is number && data.estimatedCostUsd >= 0 &&
+             (!('externalJobId' in data) || (data.externalJobId is string && data.externalJobId.size() <= 200)) &&
+             (!('projectId' in data) || (data.projectId is string && data.projectId.size() <= 128)) &&
+             (!('resultUrl' in data) || (data.resultUrl is string && data.resultUrl.size() <= 1000)) &&
+             (!('errorMessage' in data) || (data.errorMessage is string && data.errorMessage.size() <= 1000)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    // --- Collection Rules ---
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'email', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'email', 'photoUrl', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'photoUrl', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /songs/{songId} {
+        allow get: if isOwner(userId) && isValidId(songId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(songId) &&
+                         incoming().keys().hasAll(['userId', 'title', 'prompt', 'lyrics', 'genre', 'mood', 'bpm', 'vocalType', 'mode', 'status', 'aiGenerated', 'durationMs', 'versionNumber', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'prompt', 'lyrics', 'genre', 'mood', 'bpm', 'vocalType', 'mode', 'status', 'aiGenerated', 'durationMs', 'versionNumber', 'audioUrl', 'wavUrl', 'storagePath', 'providerName', 'estimatedCostUsd', 'instruments', 'vocalStyle', 'errorMessage', 'createdAt', 'updatedAt']) &&
+                         isValidSongRecord(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(songId) &&
+                         isValidSongRecord(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'prompt', 'lyrics', 'genre', 'mood', 'bpm', 'vocalType', 'mode', 'status', 'durationMs', 'versionNumber', 'audioUrl', 'wavUrl', 'storagePath', 'providerName', 'estimatedCostUsd', 'instruments', 'vocalStyle', 'errorMessage', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(songId);
+      }
+
+      match /lyrics/{lyricId} {
+        allow get: if isOwner(userId) && isValidId(lyricId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(lyricId) &&
+                         incoming().keys().hasAll(['userId', 'title', 'genre', 'duetMode', 'content', 'productionPrompt', 'singer1Name', 'singer2Name', 'aiGenerated', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'genre', 'duetMode', 'content', 'productionPrompt', 'singer1Name', 'singer2Name', 'aiGenerated', 'theme', 'parts', 'createdAt', 'updatedAt']) &&
+                         isValidLyricSheet(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(lyricId) &&
+                         isValidLyricSheet(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'genre', 'duetMode', 'content', 'productionPrompt', 'singer1Name', 'singer2Name', 'theme', 'parts', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(lyricId);
+      }
+
+      match /mediaAssets/{assetId} {
+        allow get: if isOwner(userId) && isValidId(assetId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(assetId) &&
+                         incoming().keys().hasAll(['userId', 'mediaType', 'title', 'mimeType', 'durationMs', 'trimStartMs', 'trimEndMs', 'splitPointMs', 'volume', 'fadeInMs', 'fadeOutMs', 'syncOffsetMs', 'faceDetected', 'faceCount', 'aiGenerated', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'mediaType', 'title', 'mimeType', 'durationMs', 'trimStartMs', 'trimEndMs', 'splitPointMs', 'volume', 'fadeInMs', 'fadeOutMs', 'syncOffsetMs', 'faceDetected', 'faceCount', 'aiGenerated', 'localUri', 'remoteUrl', 'storagePath', 'waveformSamples', 'createdAt', 'updatedAt']) &&
+                         isValidMediaAsset(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(assetId) &&
+                         isValidMediaAsset(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'durationMs', 'trimStartMs', 'trimEndMs', 'splitPointMs', 'volume', 'fadeInMs', 'fadeOutMs', 'syncOffsetMs', 'faceDetected', 'faceCount', 'localUri', 'remoteUrl', 'storagePath', 'waveformSamples', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(assetId);
+      }
+
+      match /projects/{projectId} {
+        allow get: if isOwner(userId) && isValidId(projectId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(projectId) &&
+                         incoming().keys().hasAll(['userId', 'projectType', 'title', 'status', 'aspectRatio', 'resolution', 'watermarkEnabled', 'aiGenerated', 'consentConfirmed', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'projectType', 'title', 'status', 'aspectRatio', 'resolution', 'watermarkEnabled', 'aiGenerated', 'consentConfirmed', 'singer1Name', 'singer1VocalRole', 'singer1PortraitUri', 'singer1FaceDetected', 'singer2Name', 'singer2VocalRole', 'singer2PortraitUri', 'singer2FaceDetected', 'selectedSongTitle', 'selectedAudioUri', 'audioDurationMs', 'performanceStyle', 'performanceIntensity', 'useVocalSeparation', 'lipSyncOffsetMs', 'cameraMovement', 'animationStyle', 'animationPrompt', 'textOverlay', 'lyricsOverlayEnabled', 'albumArtUri', 'transitionStyle', 'outputVideoUrl', 'errorMessage', 'duetLines', 'timelineClips', 'waveformSamples', 'createdAt', 'updatedAt']) &&
+                         isValidStudioProject(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(projectId) &&
+                         isValidStudioProject(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'status', 'aspectRatio', 'resolution', 'watermarkEnabled', 'consentConfirmed', 'singer1Name', 'singer1VocalRole', 'singer1PortraitUri', 'singer1FaceDetected', 'singer2Name', 'singer2VocalRole', 'singer2PortraitUri', 'singer2FaceDetected', 'selectedSongTitle', 'selectedAudioUri', 'audioDurationMs', 'performanceStyle', 'performanceIntensity', 'useVocalSeparation', 'lipSyncOffsetMs', 'cameraMovement', 'animationStyle', 'animationPrompt', 'textOverlay', 'lyricsOverlayEnabled', 'albumArtUri', 'transitionStyle', 'outputVideoUrl', 'errorMessage', 'duetLines', 'timelineClips', 'waveformSamples', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(projectId);
+      }
+
+      match /jobs/{jobId} {
+        allow get: if isOwner(userId) && isValidId(jobId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(jobId) &&
+                         incoming().keys().hasAll(['userId', 'jobType', 'title', 'providerName', 'status', 'progressPercent', 'estimatedCostUsd', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'jobType', 'title', 'providerName', 'status', 'progressPercent', 'estimatedCostUsd', 'externalJobId', 'projectId', 'resultUrl', 'errorMessage', 'createdAt', 'updatedAt']) &&
+                         isValidGenerationJob(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(jobId) &&
+                         isValidGenerationJob(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'progressPercent', 'estimatedCostUsd', 'externalJobId', 'resultUrl', 'errorMessage', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(jobId);
+      }
+    }
+  }
+}
